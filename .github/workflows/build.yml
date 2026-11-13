@@ -19,7 +19,7 @@ on:
 jobs:
   Build:
     name: ${{matrix.Settings.Name}}-${{matrix.Configuration}}
-    runs-on: windows-2022
+    runs-on: windows-2025-vs2026
     strategy:
       matrix:
         Configuration: [Release]
