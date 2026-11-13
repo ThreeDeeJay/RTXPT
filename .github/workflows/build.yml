@@ -1,0 +1,66 @@
+#Based on template from: https://github.com/ThreeDeeJay/GitHub-Actions-build-templates/blob/main/Windows-CMake.yml
+name: Build
+
+env:
+  GH_TOKEN: "${{github.token}}"
+  Branch: "${{github.ref_name}}"
+  Artifacts: "build/Release"
+  Extension: "*" # "*.exe" # "*.dll"
+  Title: "${{github.event.repository.name}}"
+  Executable: "${{github.event.repository.name}}.exe" # *
+
+on:
+  push:
+    Branches: "$Branch"
+  pull_request:
+    Branches: "$Branch"
+  workflow_dispatch:
+
+jobs:
+  Build:
+    name: ${{matrix.Settings.Name}}-${{matrix.Configuration}}
+    runs-on: windows-2022
+    strategy:
+      matrix:
+        Configuration: [Release]
+        Settings:
+        - {
+            Name: "Win64",
+            Platform: "x64",
+            Architecture: "x64",
+            Triplet: "x64-windows",
+            Bits: "64"
+          }
+          
+    steps:
+    - name: Clone repo and submodules
+      run: >
+        git
+        clone https://${{github.repository_owner}}:${{github.token}}@github.com/${{github.repository}}.git
+        "${{github.workspace}}"
+        --revision ${{github.sha}}
+        --filter=blob:none
+        --recurse-submodules
+
+    - name: Configure
+      run: >
+        cmake
+        -A "${{matrix.Settings.Platform}}"
+        -B "${{github.workspace}}/build"
+        -DCMAKE_BUILD_TYPE=${{matrix.Configuration}}
+        -DDONUT_WITH_VULKAN=ON
+
+    - name: Build
+      run: >
+        cmake
+        --build "${{github.workspace}}/build"
+        --config "${{matrix.Configuration}}"
+
+    - name: List files
+      run: Get-ChildItem -Path "." -File -Recurse | Select-Object FullName
+
+    - name: Upload artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: ${{env.Title}}-${{matrix.Settings.Name}}-${{matrix.Configuration}}
+        path: "${{github.workspace}}/${{env.Artifacts}}/${{env.Extension}}"
