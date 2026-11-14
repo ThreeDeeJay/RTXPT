@@ -59,6 +59,12 @@ jobs:
     - name: List files
       run: Get-ChildItem -Path "." -File -Recurse | Select-Object FullName
 
+    - name: Deploy
+      run: |
+        mkdir "${{env.Artifacts}}"
+        mv "bin" "${{env.Artifacts}}"
+        mv "Assets" "${{env.Artifacts}}"
+        
     - name: Upload artifacts
       uses: actions/upload-artifact@v4
       with:
